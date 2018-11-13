@@ -1,0 +1,50 @@
+version: '3'
+services:
+  remindme:
+    build:
+      context: ./
+      dockerfile: dockerfile
+    restart: always
+    container_name: remindme
+    working_dir: /var/www/remindme
+    volumes:
+    - ../:/var/www/remindme
+    - ~/.ssh:/root/.ssh
+    - ~/.m2:/root/.m2
+    expose:
+      - 8080
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    command: mvn clean spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005"
+    depends_on:
+      - remindme-nginx
+      - remindme-postgres
+
+  remindme-nginx:
+    build:
+      context: ./
+      dockerfile: dockerfile-nginx
+    restart: always
+    container_name: remindme-nginx
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ../:/var/www/remindme
+
+  remindme-postgres:
+    restart: always
+    image: postgres
+    container_name: remindme-postgres
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+    environment:
+      - DEBUG=false
+
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=remindme
